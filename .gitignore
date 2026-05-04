@@ -1,0 +1,67 @@
+```
+# Build artifacts
+*.jar
+*.class
+target/
+
+# Dependencies
+.gradle/
+node_modules/
+
+# Archives
+*.tar.gz
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Editors
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Python (if present)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Java/Maven
+*.class
+*.war
+*.jar
+*.ear
+*.sar
+*.orig
+.META-INF/
+
+# Gradle
+.gradle/
+build/
+
+# Test coverage
+coverage/
+htmlcov/
+.coverage
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# IDE
+*.swp
+*.swo
+*~
+```
