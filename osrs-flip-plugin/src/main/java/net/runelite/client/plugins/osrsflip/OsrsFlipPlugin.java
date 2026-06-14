@@ -24,13 +24,20 @@
  */
 package net.runelite.client.plugins.osrsflip;
 
+import com.google.gson.Gson;
 import com.google.inject.Provides;
+import java.awt.image.BufferedImage;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
 
 @Slf4j
 @PluginDescriptor(
@@ -46,15 +53,67 @@ public class OsrsFlipPlugin extends Plugin
 	@Inject
 	private OsrsFlipConfig config;
 
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	@Inject
+	private ItemManager itemManager;
+
+	@Inject
+	private ClientThread clientThread;
+
+	@Inject
+	private Gson gson;
+
+	private NavigationButton navButton;
+	private OsrsFlipPanel panel;
+	private ManualPriceManager manualPriceManager;
+	private CombinationRecipeManager recipeManager;
+	private DataManager dataManager;
+
 	@Override
-	protected void startUp() throws Exception
+	protected void startUp()
 	{
+		manualPriceManager = new ManualPriceManager();
+		ProfitCalculator profitCalculator = new ProfitCalculator();
+		recipeManager = new CombinationRecipeManager();
+		dataManager = new DataManager(gson);
+
+		panel = new OsrsFlipPanel(
+			itemManager,
+			clientThread,
+			manualPriceManager,
+			profitCalculator,
+			recipeManager,
+			dataManager,
+			config
+		);
+
+		// Load saved data
+		dataManager.load(panel.getWatchlist(), manualPriceManager, recipeManager);
+
+		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/net/runelite/client/plugins/osrsflip/icon.png");
+
+		navButton = NavigationButton.builder()
+			.tooltip("Flip Tracker")
+			.icon(icon != null ? icon : new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB))
+			.priority(5)
+			.panel(panel)
+			.build();
+
+		clientToolbar.addNavigation(navButton);
+
+		panel.refreshWatchlist();
+		panel.refreshCombinations();
+
 		log.debug("OSRS Flip Plugin started!");
 	}
 
 	@Override
-	protected void shutDown() throws Exception
+	protected void shutDown()
 	{
+		dataManager.save(panel.getWatchlist(), manualPriceManager, recipeManager);
+		clientToolbar.removeNavigation(navButton);
 		log.debug("OSRS Flip Plugin stopped!");
 	}
 

@@ -1,5 +1,6 @@
 plugins {
 id 'java'
+id 'application'
 }
 
 repositories {
@@ -32,4 +33,28 @@ group = 'net.runelite.client.plugins.osrsflip'
 tasks.withType(JavaCompile).configureEach {
 options.encoding = 'UTF-8'
 options.release.set(11)
+}
+
+application {
+mainClass.set('net.runelite.client.RuneLite')
+applicationDefaultJvmArgs = [
+'-ea',
+'--add-opens', 'java.desktop/sun.awt=ALL-UNNAMED'
+]
+}
+
+sourceSets {
+main {
+output.resourcesDir = output.classesDirs.singleFile
+}
+}
+
+run {
+ignoreExitValue = true
+}
+
+configurations {
+runtimeOnly {
+extendsFrom compileOnly
+}
 }

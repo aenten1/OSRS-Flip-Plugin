@@ -32,12 +32,12 @@ import net.runelite.client.config.ConfigItem;
 public interface OsrsFlipConfig extends Config
 {
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The greeting to show when the plugin starts"
+		keyName = "combinationsFirst",
+		name = "Show Combinations First",
+		description = "When enabled, the Combinations tab is shown before the Watchlist tab"
 	)
-	default String greeting()
+	default boolean combinationsFirst()
 	{
-		return "Welcome to OSRS Flip Plugin!";
+		return true;
 	}
 }
