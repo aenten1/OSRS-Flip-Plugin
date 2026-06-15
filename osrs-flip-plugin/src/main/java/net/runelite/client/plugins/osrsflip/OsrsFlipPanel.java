@@ -363,7 +363,9 @@ public class OsrsFlipPanel extends PluginPanel
 			popup.add(item);
 		}
 
+		popup.setFocusable(false);
 		popup.show(searchField, 0, searchField.getHeight());
+		searchField.requestFocusInWindow();
 	}
 
 	private void addItemFromSearch()
@@ -526,7 +528,9 @@ public class OsrsFlipPanel extends PluginPanel
 						}
 						preview.setText(results.size() + " result(s)");
 						preview.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+						popup.setFocusable(false);
 						popup.show(idField, 0, idField.getHeight());
+						idField.requestFocusInWindow();
 					}
 				});
 			});

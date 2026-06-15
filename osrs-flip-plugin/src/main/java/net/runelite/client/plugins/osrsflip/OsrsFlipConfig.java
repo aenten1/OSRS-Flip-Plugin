@@ -178,4 +178,28 @@ public interface OsrsFlipConfig extends Config
 	{
 		return 0.0;
 	}
+
+	@ConfigItem(
+		keyName = "buyRoundInterval",
+		name = "Buy Round Interval",
+		description = "Round buy price up to the nearest interval (e.g. 5000 rounds 2122415 to 2125000). 0 = no rounding.",
+		section = offsetsSection,
+		position = 4
+	)
+	default int buyRoundInterval()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+		keyName = "sellRoundInterval",
+		name = "Sell Round Interval",
+		description = "Round sell price down to the nearest interval (e.g. 5000 rounds 2127800 to 2125000). 0 = no rounding.",
+		section = offsetsSection,
+		position = 5
+	)
+	default int sellRoundInterval()
+	{
+		return 0;
+	}
 }

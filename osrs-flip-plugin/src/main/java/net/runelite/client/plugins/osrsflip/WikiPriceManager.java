@@ -229,7 +229,8 @@ public class WikiPriceManager
 		{
 			return -1;
 		}
-		return applyOffset(price, config.buyOffsetGp(), config.buyOffsetPercent());
+		int result = applyOffset(price, config.buyOffsetGp(), config.buyOffsetPercent());
+		return roundUp(result, config.buyRoundInterval());
 	}
 
 	/**
@@ -242,7 +243,8 @@ public class WikiPriceManager
 		{
 			return -1;
 		}
-		return applyOffset(price, config.sellOffsetGp(), config.sellOffsetPercent());
+		int result = applyOffset(price, config.sellOffsetGp(), config.sellOffsetPercent());
+		return roundDown(result, config.sellRoundInterval());
 	}
 
 	/**
@@ -331,6 +333,30 @@ public class WikiPriceManager
 			result += price * (offsetPercent / 100.0);
 		}
 		return Math.max(0, (int) Math.round(result));
+	}
+
+	/**
+	 * Rounds a price up to the nearest interval. Buy prices round up so you don't underbid.
+	 */
+	private int roundUp(int price, int interval)
+	{
+		if (interval <= 0 || price <= 0)
+		{
+			return price;
+		}
+		return ((price + interval - 1) / interval) * interval;
+	}
+
+	/**
+	 * Rounds a price down to the nearest interval. Sell prices round down so you don't overprice.
+	 */
+	private int roundDown(int price, int interval)
+	{
+		if (interval <= 0 || price <= 0)
+		{
+			return price;
+		}
+		return (price / interval) * interval;
 	}
 
 	public boolean hasPrice(int itemId)
