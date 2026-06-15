@@ -28,11 +28,14 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.RenderingHints;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +43,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -66,6 +70,9 @@ public class OsrsFlipPanel extends PluginPanel
 	private static final NumberFormat GP_FORMAT = NumberFormat.getInstance();
 	private static final int SEARCH_DELAY_MS = 300;
 	private static final int MAX_SEARCH_RESULTS = 10;
+	private static final int TIMER_ICON_SIZE = 12;
+	private static final int TIMER_ICON_STEPS = 13;
+	private final ImageIcon[] timerIcons = new ImageIcon[TIMER_ICON_STEPS];
 
 	private final ItemManager itemManager;
 	private final ClientThread clientThread;
@@ -85,7 +92,10 @@ public class OsrsFlipPanel extends PluginPanel
 	private JPanel combinationsPanel;
 	private JTextField searchField;
 	private JLabel searchStatus;
+	private JLabel refreshCountdown;
 	private Timer searchTimer;
+	private Timer countdownTimer;
+	private long lastRefreshTime;
 
 	public OsrsFlipPanel(
 		ItemManager itemManager,
@@ -107,11 +117,59 @@ public class OsrsFlipPanel extends PluginPanel
 		this.wikiPriceManager = wikiPriceManager;
 		this.config = config;
 
+		// Generate stopwatch icons with clockwise depletion
+		for (int i = 0; i < TIMER_ICON_STEPS; i++)
+		{
+			double fillPct = 1.0 - ((double) i / (TIMER_ICON_STEPS - 1));
+			timerIcons[i] = new ImageIcon(createTimerIcon(fillPct));
+		}
+
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
 		add(buildHeader(), BorderLayout.NORTH);
 		add(buildTabs(), BorderLayout.CENTER);
+	}
+
+	/**
+	 * Creates a stopwatch-shaped icon with a pie fill depleting clockwise.
+	 * @param fill 1.0 = full, 0.0 = empty
+	 */
+	private BufferedImage createTimerIcon(double fill)
+	{
+		int s = TIMER_ICON_SIZE;
+		BufferedImage img = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = img.createGraphics();
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+		int cx = s / 2;
+		int r = s / 2 - 2; // radius for clock face
+		int top = 2; // top offset for face
+
+		// Stopwatch nub on top
+		g.setColor(new Color(180, 180, 180));
+		g.fillRect(cx - 1, 0, 2, 2);
+
+		// Clock face outline
+		g.setColor(new Color(120, 120, 120));
+		g.fillOval(cx - r - 1, top, r * 2 + 2, r * 2 + 2);
+
+		// Clock face background
+		g.setColor(new Color(60, 60, 60));
+		g.fillOval(cx - r, top + 1, r * 2, r * 2);
+
+		// Fill arc (clockwise from 12 o'clock)
+		if (fill > 0.01)
+		{
+			g.setColor(new Color(100, 200, 255));
+			int arcAngle = (int) (fill * 360);
+			// startAngle 90 = 12 o'clock, positive = counter-clockwise in Java
+			// so we go negative to draw clockwise depletion
+			g.fillArc(cx - r, top + 1, r * 2, r * 2, 90, arcAngle);
+		}
+
+		g.dispose();
+		return img;
 	}
 
 	private JPanel buildHeader()
@@ -120,9 +178,23 @@ public class OsrsFlipPanel extends PluginPanel
 		header.setBorder(new EmptyBorder(5, 0, 5, 0));
 		header.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
+		JPanel titleRow = new JPanel(new BorderLayout());
+		titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+
 		JLabel title = new JLabel("Flip Tracker");
 		title.setForeground(Color.WHITE);
-		header.add(title, BorderLayout.NORTH);
+		titleRow.add(title, BorderLayout.WEST);
+
+		refreshCountdown = new JLabel();
+		refreshCountdown.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		titleRow.add(refreshCountdown, BorderLayout.EAST);
+
+		header.add(titleRow, BorderLayout.NORTH);
+
+		// Start countdown ticker
+		lastRefreshTime = System.currentTimeMillis();
+		countdownTimer = new Timer(1000, e -> updateCountdown());
+		countdownTimer.start();
 
 		JPanel searchRow = new JPanel(new BorderLayout(5, 0));
 		searchRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -473,6 +545,51 @@ public class OsrsFlipPanel extends PluginPanel
 		return preview;
 	}
 
+	private void updateCountdown()
+	{
+		if (!config.autoRefresh())
+		{
+			refreshCountdown.setText("Auto off");
+			refreshCountdown.setIcon(null);
+			refreshCountdown.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+			return;
+		}
+
+		long elapsed = System.currentTimeMillis() - lastRefreshTime;
+		long intervalMs = Math.max(1, config.autoRefreshMinutes()) * 60_000L;
+		long remaining = intervalMs - elapsed;
+
+		if (remaining <= 0)
+		{
+			refreshCountdown.setText("Refreshing...");
+			refreshCountdown.setIcon(null);
+			refreshCountdown.setForeground(new Color(100, 200, 255));
+			return;
+		}
+
+		long totalSecs = remaining / 1000;
+		long mins = totalSecs / 60;
+		long secs = totalSecs % 60;
+		double pct = (double) remaining / intervalMs;
+
+		// Pick icon based on fill percentage (index 0 = full, last = empty)
+		int iconIdx = (int) ((1.0 - pct) * (TIMER_ICON_STEPS - 1));
+		iconIdx = Math.max(0, Math.min(TIMER_ICON_STEPS - 1, iconIdx));
+
+		refreshCountdown.setText(String.format("%d:%02d ", mins, secs));
+		refreshCountdown.setIcon(timerIcons[iconIdx]);
+		refreshCountdown.setHorizontalTextPosition(JLabel.LEFT);
+		refreshCountdown.setForeground(new Color(180, 180, 180));
+	}
+
+	/**
+	 * Called when a refresh completes to reset the countdown.
+	 */
+	public void markRefreshed()
+	{
+		lastRefreshTime = System.currentTimeMillis();
+	}
+
 	private void saveData()
 	{
 		dataManager.save(watchlist, manualPriceManager, recipeManager);
@@ -638,6 +755,7 @@ public class OsrsFlipPanel extends PluginPanel
 
 	private void rebuildWatchlistUi()
 	{
+		markRefreshed();
 		watchlistPanel.removeAll();
 
 		if (watchlist.isEmpty())
