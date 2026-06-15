@@ -905,112 +905,31 @@ public class OsrsFlipPanel extends PluginPanel
 		panel.add(ingredientSection, BorderLayout.CENTER);
 
 		String dialogTitle = editingRecipe != null ? "Edit Recipe" : "Add Combination Recipe";
-		int result = JOptionPane.showConfirmDialog(this, panel,
-			dialogTitle, JOptionPane.OK_CANCEL_OPTION);
 
-		if (result == JOptionPane.OK_OPTION)
+		// Loop so validation errors re-show the dialog with the user's data intact
+		while (true)
 		{
+			int result = JOptionPane.showConfirmDialog(this, panel,
+				dialogTitle, JOptionPane.OK_CANCEL_OPTION);
+
+			if (result != JOptionPane.OK_OPTION)
+			{
+				return;
+			}
+
 			// Validate inputs
+			String validationError = validateRecipeDialog(nameField, resultField, ingredientRows, editingRecipe);
+			if (validationError != null)
+			{
+				JOptionPane.showMessageDialog(this, validationError,
+					"Validation Error", JOptionPane.ERROR_MESSAGE);
+				continue;
+			}
+
 			String rName = nameField.getText().trim();
-			if (rName.isEmpty())
-			{
-				JOptionPane.showMessageDialog(this, "Recipe name is required.",
-					"Validation Error", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
+			int resultId = Integer.parseInt(resultField.getText().trim());
 
-			String resultText = resultField.getText().trim();
-			int resultId;
-			try
-			{
-				resultId = Integer.parseInt(resultText);
-				if (resultId <= 0)
-				{
-					JOptionPane.showMessageDialog(this, "Result item ID must be a positive number.",
-						"Validation Error", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
-			}
-			catch (NumberFormatException e)
-			{
-				JOptionPane.showMessageDialog(this, "Result item ID must be a valid number: \"" + resultText + "\"",
-					"Validation Error", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-
-			if (editingRecipe != null)
-			{
-				recipeManager.removeRecipe(editingRecipe.getName());
-			}
-
-			CombinationRecipe recipe = new CombinationRecipe(rName, resultId);
-			int rowNum = 0;
-
-			for (Object[] fields : ingredientRows)
-			{
-				rowNum++;
-				JTextField idField = (JTextField) fields[0];
-				JTextField qtyField = (JTextField) fields[1];
-
-				String idText = idField.getText().trim();
-				String qtyText = qtyField.getText().trim();
-
-				if (idText.isEmpty() && qtyText.isEmpty())
-				{
-					continue;
-				}
-
-				int ingId;
-				try
-				{
-					ingId = Integer.parseInt(idText);
-					if (ingId <= 0)
-					{
-						JOptionPane.showMessageDialog(this,
-							"Ingredient row " + rowNum + ": Item ID must be a positive number.",
-							"Validation Error", JOptionPane.ERROR_MESSAGE);
-						return;
-					}
-				}
-				catch (NumberFormatException e)
-				{
-					JOptionPane.showMessageDialog(this,
-						"Ingredient row " + rowNum + ": Invalid item ID \"" + idText + "\"",
-						"Validation Error", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
-
-				int qty;
-				try
-				{
-					qty = Integer.parseInt(qtyText);
-					if (qty <= 0)
-					{
-						JOptionPane.showMessageDialog(this,
-							"Ingredient row " + rowNum + ": Quantity must be a positive number.",
-							"Validation Error", JOptionPane.ERROR_MESSAGE);
-						return;
-					}
-				}
-				catch (NumberFormatException e)
-				{
-					JOptionPane.showMessageDialog(this,
-						"Ingredient row " + rowNum + ": Invalid quantity \"" + qtyText + "\"",
-						"Validation Error", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
-
-				recipe.addIngredient(ingId, qty);
-			}
-
-			if (recipe.getIngredients().isEmpty())
-			{
-				JOptionPane.showMessageDialog(this, "Add at least one ingredient.",
-					"Validation Error", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-
-			// Check for duplicate name (skip if editing the same recipe)
+			// Check for duplicate name
 			boolean isRename = editingRecipe != null && !editingRecipe.getName().equals(rName);
 			boolean isNew = editingRecipe == null;
 			if ((isNew || isRename) && recipeManager.getRecipe(rName) != null)
@@ -1018,13 +937,104 @@ public class OsrsFlipPanel extends PluginPanel
 				JOptionPane.showMessageDialog(this,
 					"A recipe named \"" + rName + "\" already exists. Choose a different name.",
 					"Duplicate Name", JOptionPane.WARNING_MESSAGE);
-				return;
+				continue;
+			}
+
+			// All valid — save the recipe
+			if (editingRecipe != null)
+			{
+				recipeManager.removeRecipe(editingRecipe.getName());
+			}
+
+			CombinationRecipe recipe = new CombinationRecipe(rName, resultId);
+			for (Object[] fields : ingredientRows)
+			{
+				String idText = ((JTextField) fields[0]).getText().trim();
+				String qtyText = ((JTextField) fields[1]).getText().trim();
+				if (!idText.isEmpty() && !qtyText.isEmpty())
+				{
+					recipe.addIngredient(Integer.parseInt(idText), Integer.parseInt(qtyText));
+				}
 			}
 
 			recipeManager.addRecipe(recipe);
 			saveData();
 			refreshCombinations();
+			return;
 		}
+	}
+
+	private String validateRecipeDialog(JTextField nameField, JTextField resultField,
+		List<Object[]> ingredientRows, CombinationRecipe editingRecipe)
+	{
+		String rName = nameField.getText().trim();
+		if (rName.isEmpty())
+		{
+			return "Recipe name is required.";
+		}
+
+		String resultText = resultField.getText().trim();
+		try
+		{
+			int resultId = Integer.parseInt(resultText);
+			if (resultId <= 0)
+			{
+				return "Result item ID must be a positive number.";
+			}
+		}
+		catch (NumberFormatException e)
+		{
+			return "Result item ID must be a valid number: \"" + resultText + "\"";
+		}
+
+		int validIngredients = 0;
+		int rowNum = 0;
+		for (Object[] fields : ingredientRows)
+		{
+			rowNum++;
+			String idText = ((JTextField) fields[0]).getText().trim();
+			String qtyText = ((JTextField) fields[1]).getText().trim();
+
+			if (idText.isEmpty() && qtyText.isEmpty())
+			{
+				continue;
+			}
+
+			try
+			{
+				int ingId = Integer.parseInt(idText);
+				if (ingId <= 0)
+				{
+					return "Ingredient row " + rowNum + ": Item ID must be a positive number.";
+				}
+			}
+			catch (NumberFormatException e)
+			{
+				return "Ingredient row " + rowNum + ": Invalid item ID \"" + idText + "\"";
+			}
+
+			try
+			{
+				int qty = Integer.parseInt(qtyText);
+				if (qty <= 0)
+				{
+					return "Ingredient row " + rowNum + ": Quantity must be a positive number.";
+				}
+			}
+			catch (NumberFormatException e)
+			{
+				return "Ingredient row " + rowNum + ": Invalid quantity \"" + qtyText + "\"";
+			}
+
+			validIngredients++;
+		}
+
+		if (validIngredients == 0)
+		{
+			return "Add at least one ingredient.";
+		}
+
+		return null;
 	}
 
 	private void rebuildCombinationsUi()
@@ -1061,12 +1071,18 @@ public class OsrsFlipPanel extends PluginPanel
 
 	private JPanel buildRecipeRow(CombinationRecipe recipe)
 	{
+		// Each ingredient = 2 lines, plus separator + sell + tax + cost + profit = 5 lines
+		// topBar ~28px, each line ~16px, border padding ~8px
+		int lineCount = recipe.getIngredients().size() * 2 + 5;
+		int estimatedHeight = 28 + lineCount * 16 + 12;
+
 		JPanel row = new JPanel(new BorderLayout(0, 0));
 		row.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.MEDIUM_GRAY_COLOR),
 			new EmptyBorder(4, 5, 4, 5)
 		));
 		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, estimatedHeight));
 
 		JPanel topBar = new JPanel(new BorderLayout());
 		topBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
