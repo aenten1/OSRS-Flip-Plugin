@@ -192,3 +192,11 @@ Once testing is complete and you are ready for public release:
 4.  **Approval:** Once merged, users can install your plugin directly from the in-game Plugin Hub without developer mode.
 
 **Good luck with your flipping!**
+
+---
+
+## Support
+
+If you find this plugin useful, consider supporting development:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/ace554)

@@ -69,6 +69,12 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Support
+
+If you find this plugin useful, consider supporting development:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/ace554)
+
 ## Disclaimer
 
 This plugin is not affiliated with or endorsed by Jagex. Use at your own risk.
