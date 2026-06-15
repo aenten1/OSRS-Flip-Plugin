@@ -604,7 +604,7 @@ public class OsrsFlipPanel extends PluginPanel
 	public void refreshCombinations()
 	{
 		List<CombinationRecipe> recipes = recipeManager.getAllRecipes();
-		log.info("refreshCombinations: {} recipes", recipes.size());
+		log.debug("refreshCombinations: {} recipes", recipes.size());
 
 		List<Integer> ids = new ArrayList<>();
 		for (CombinationRecipe recipe : recipes)
@@ -617,7 +617,7 @@ public class OsrsFlipPanel extends PluginPanel
 
 	private void fetchPricesAndNames(List<Integer> itemIds, Runnable uiCallback)
 	{
-		log.info("fetchPricesAndNames: {} items, wikiPrices={}", itemIds.size(), config.useWikiPrices());
+		log.debug("fetchPricesAndNames: {} items, wikiPrices={}", itemIds.size(), config.useWikiPrices());
 
 		if (itemIds.isEmpty())
 		{
@@ -666,8 +666,16 @@ public class OsrsFlipPanel extends PluginPanel
 				for (int itemId : itemIds)
 				{
 					cacheItemName(itemId);
-					int price = itemManager.getItemPrice(itemId);
-					priceCache.put(itemId, new int[]{price, price});
+					try
+					{
+						int price = itemManager.getItemPrice(itemId);
+						priceCache.put(itemId, new int[]{price, price});
+					}
+					catch (Exception e)
+					{
+						log.debug("Failed to get price for item {}", itemId);
+						priceCache.put(itemId, new int[]{-1, -1});
+					}
 				}
 				SwingUtilities.invokeLater(uiCallback);
 			});
@@ -1160,7 +1168,7 @@ public class OsrsFlipPanel extends PluginPanel
 		combinationsPanel.removeAll();
 
 		List<CombinationRecipe> recipes = recipeManager.getAllRecipes();
-		log.info("rebuildCombinationsUi: {} recipes to display", recipes.size());
+		log.debug("rebuildCombinationsUi: {} recipes to display", recipes.size());
 
 		if (recipes.isEmpty())
 		{

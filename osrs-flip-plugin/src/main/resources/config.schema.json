@@ -19,15 +19,21 @@
           "description": "GP thresholds for filtering flips (e.g., [50000, 100000, 250000])",
           "default": [50000, 100000, 250000, 500000, 1000000]
         },
-        "autoRefreshOnGEOpen": {
+        "autoRefresh": {
           "type": "boolean",
-          "description": "Automatically refresh prices when Grand Exchange interface is opened",
+          "description": "Automatically refresh prices on a timer",
           "default": true
         },
-        "useWikiApiFallback": {
+        "autoRefreshMinutes": {
+          "type": "integer",
+          "description": "Auto-refresh interval in minutes",
+          "default": 10,
+          "minimum": 1
+        },
+        "useWikiPrices": {
           "type": "boolean",
-          "description": "Use wiki API if local cache is insufficient (requires restart)",
-          "default": false
+          "description": "Fetch real-time prices from the OSRS Wiki API",
+          "default": true
         }
       }
     },

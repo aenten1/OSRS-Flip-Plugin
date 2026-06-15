@@ -90,18 +90,21 @@ public class WikiPriceManager
 			@Override
 			public void onResponse(Call call, Response response)
 			{
-				try
+				try (Response r = response)
 				{
-					if (!response.isSuccessful() || response.body() == null)
+					if (!r.isSuccessful() || r.body() == null)
 					{
-						log.debug("Wiki latest API returned {}", response.code());
+						log.debug("Wiki latest API returned {}", r.code());
 						return;
 					}
 
-					String body = response.body().string();
+					String body = r.body().string();
 					JsonObject root = gson.fromJson(body, JsonObject.class);
+					if (root == null)
+					{
+						return;
+					}
 					JsonObject data = root.getAsJsonObject("data");
-
 					if (data == null)
 					{
 						return;
@@ -134,7 +137,6 @@ public class WikiPriceManager
 				}
 				finally
 				{
-					response.close();
 					onDone.run();
 				}
 			}
@@ -164,18 +166,21 @@ public class WikiPriceManager
 			@Override
 			public void onResponse(Call call, Response response)
 			{
-				try
+				try (Response r = response)
 				{
-					if (!response.isSuccessful() || response.body() == null)
+					if (!r.isSuccessful() || r.body() == null)
 					{
-						log.debug("Wiki 1h API returned {}", response.code());
+						log.debug("Wiki 1h API returned {}", r.code());
 						return;
 					}
 
-					String body = response.body().string();
+					String body = r.body().string();
 					JsonObject root = gson.fromJson(body, JsonObject.class);
+					if (root == null)
+					{
+						return;
+					}
 					JsonObject data = root.getAsJsonObject("data");
-
 					if (data == null)
 					{
 						return;
@@ -208,7 +213,6 @@ public class WikiPriceManager
 				}
 				finally
 				{
-					response.close();
 					onDone.run();
 				}
 			}

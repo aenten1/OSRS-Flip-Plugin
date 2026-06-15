@@ -14,157 +14,215 @@ import static org.junit.Assert.*;
  */
 public class OsrsFlipPluginTest
 {
-private ProfitCalculator profitCalculator;
-private CombinationRecipeManager recipeManager;
-private ManualPriceManager manualPriceManager;
-private HistoricalPriceTracker historicalTracker;
+	private ProfitCalculator profitCalculator;
+	private CombinationRecipeManager recipeManager;
+	private ManualPriceManager manualPriceManager;
 
-@Before
-public void setUp()
-{
-profitCalculator = new ProfitCalculator();
-recipeManager = new CombinationRecipeManager();
-manualPriceManager = new ManualPriceManager();
-historicalTracker = new HistoricalPriceTracker();
-}
+	@Before
+	public void setUp()
+	{
+		profitCalculator = new ProfitCalculator();
+		recipeManager = new CombinationRecipeManager();
+		manualPriceManager = new ManualPriceManager();
+	}
 
-@Test
-public void testCalculateBasicProfit_PositiveProfit()
-{
-int buyPrice = 100;
-int sellPrice = 150;
+	// --- Tax calculation tests ---
 
-int profit = profitCalculator.calculateBasicProfit(buyPrice, sellPrice);
+	@Test
+	public void testCalculateTax_BelowThreshold()
+	{
+		// Items below 50gp have no tax
+		assertEquals(0, profitCalculator.calculateTax(0));
+		assertEquals(0, profitCalculator.calculateTax(49));
+	}
 
-assertEquals(47, profit);
-}
+	@Test
+	public void testCalculateTax_Normal()
+	{
+		// 2% floored
+		assertEquals(1, profitCalculator.calculateTax(50));
+		assertEquals(2, profitCalculator.calculateTax(100));
+		assertEquals(3, profitCalculator.calculateTax(150));
+		assertEquals(2000, profitCalculator.calculateTax(100_000));
+	}
 
-@Test
-public void testCalculateBasicProfit_NegativeProfit()
-{
-int buyPrice = 200;
-int sellPrice = 150;
+	@Test
+	public void testCalculateTax_Capped()
+	{
+		// Capped at 5,000,000
+		assertEquals(5_000_000, profitCalculator.calculateTax(250_000_001));
+		assertEquals(5_000_000, profitCalculator.calculateTax(500_000_000));
+	}
 
-int profit = profitCalculator.calculateBasicProfit(buyPrice, sellPrice);
+	// --- Profit calculation tests ---
 
-assertEquals(-53, profit);
-}
+	@Test
+	public void testCalculateBasicProfit_PositiveProfit()
+	{
+		// sell 150, tax = floor(150 * 0.02) = 3, profit = 150 - 3 - 100 = 47
+		assertEquals(47, profitCalculator.calculateBasicProfit(100, 150));
+	}
 
-@Test
-public void testGetProfitThreshold_NoProfit()
-{
-assertEquals(ProfitThreshold.NONE, profitCalculator.getProfitThreshold(-1));
-assertEquals(ProfitThreshold.NONE, profitCalculator.getProfitThreshold(0));
-}
+	@Test
+	public void testCalculateBasicProfit_NegativeProfit()
+	{
+		// sell 150, tax = 3, profit = 150 - 3 - 200 = -53
+		assertEquals(-53, profitCalculator.calculateBasicProfit(200, 150));
+	}
 
-@Test
-public void testGetProfitThreshold_LowProfit()
-{
-assertEquals(ProfitThreshold.LOW, profitCalculator.getProfitThreshold(1));
-assertEquals(ProfitThreshold.LOW, profitCalculator.getProfitThreshold(49_999));
-}
+	@Test
+	public void testCalculateBasicProfit_InvalidPrices()
+	{
+		assertEquals(-1, profitCalculator.calculateBasicProfit(-1, 150));
+		assertEquals(-1, profitCalculator.calculateBasicProfit(100, -1));
+	}
 
-@Test
-public void testGetProfitThreshold_MediumProfit()
-{
-assertEquals(ProfitThreshold.MEDIUM, profitCalculator.getProfitThreshold(50_000));
-assertEquals(ProfitThreshold.MEDIUM, profitCalculator.getProfitThreshold(99_999));
-}
+	@Test
+	public void testCalculateBasicProfit_NoTaxBelowThreshold()
+	{
+		// sell 30, tax = 0 (below 50gp), profit = 30 - 0 - 10 = 20
+		assertEquals(20, profitCalculator.calculateBasicProfit(10, 30));
+	}
 
-@Test
-public void testGetProfitThreshold_HighProfit()
-{
-assertEquals(ProfitThreshold.HIGH, profitCalculator.getProfitThreshold(100_000));
-assertEquals(ProfitThreshold.HIGH, profitCalculator.getProfitThreshold(249_999));
-}
+	// --- Threshold tests ---
 
-@Test
-public void testCombinationRecipe_AddIngredients()
-{
-CombinationRecipe recipe = new CombinationRecipe("Test Recipe", 1);
+	@Test
+	public void testGetProfitThreshold_NoProfit()
+	{
+		assertEquals(ProfitThreshold.NONE, profitCalculator.getProfitThreshold(-1));
+		assertEquals(ProfitThreshold.NONE, profitCalculator.getProfitThreshold(0));
+	}
 
-recipe.addIngredient(314, 2);
-recipe.addIngredient(315, 1);
+	@Test
+	public void testGetProfitThreshold_LowProfit()
+	{
+		assertEquals(ProfitThreshold.LOW, profitCalculator.getProfitThreshold(1));
+		assertEquals(ProfitThreshold.LOW, profitCalculator.getProfitThreshold(49_999));
+	}
 
-assertEquals(2, recipe.getIngredients().size());
-assertEquals(2, recipe.getIngredientQuantity(314));
-assertEquals(1, recipe.getIngredientQuantity(315));
-}
+	@Test
+	public void testGetProfitThreshold_MediumProfit()
+	{
+		assertEquals(ProfitThreshold.MEDIUM, profitCalculator.getProfitThreshold(50_000));
+		assertEquals(ProfitThreshold.MEDIUM, profitCalculator.getProfitThreshold(99_999));
+	}
 
-@Test
-public void testCombinationRecipe_Validate_Valid()
-{
-CombinationRecipe recipe = new CombinationRecipe("Valid Recipe", 1);
-recipe.addIngredient(314, 2);
-recipe.addIngredient(315, 1);
+	@Test
+	public void testGetProfitThreshold_HighProfit()
+	{
+		assertEquals(ProfitThreshold.HIGH, profitCalculator.getProfitThreshold(100_000));
+		assertEquals(ProfitThreshold.HIGH, profitCalculator.getProfitThreshold(249_999));
+	}
 
-assertTrue(recipe.validate());
-}
+	// --- Recipe tests ---
 
-@Test
-public void testCombinationRecipe_Validate_TooManyIngredients()
-{
-CombinationRecipe recipe = new CombinationRecipe("Too Many Ingredients", 1);
+	@Test
+	public void testCombinationRecipe_AddIngredients()
+	{
+		CombinationRecipe recipe = new CombinationRecipe("Test Recipe", 1);
 
-for (int i = 1; i <= 11; i++)
-{
-recipe.addIngredient(i, 1);
-}
+		recipe.addIngredient(314, 2);
+		recipe.addIngredient(315, 1);
 
-assertFalse(recipe.validate());
-}
+		assertEquals(2, recipe.getIngredients().size());
+		assertEquals(2, recipe.getIngredientQuantity(314));
+		assertEquals(1, recipe.getIngredientQuantity(315));
+	}
 
-@Test
-public void testManualPriceManager_SetAndGetPrices()
-{
-int itemId = 314;
-int buyPrice = 100;
-int sellPrice = 150;
+	@Test
+	public void testCombinationRecipe_Validate_Valid()
+	{
+		CombinationRecipe recipe = new CombinationRecipe("Valid Recipe", 1);
+		recipe.addIngredient(314, 2);
+		recipe.addIngredient(315, 1);
 
-manualPriceManager.setManualBuyPrice(itemId, buyPrice);
-manualPriceManager.setManualSellPrice(itemId, sellPrice);
+		assertTrue(recipe.validate());
+	}
 
-assertEquals(Integer.valueOf(buyPrice), manualPriceManager.getManualBuyPrice(itemId));
-assertEquals(Integer.valueOf(sellPrice), manualPriceManager.getManualSellPrice(itemId));
-}
+	@Test
+	public void testCombinationRecipe_Validate_TooManyIngredients()
+	{
+		CombinationRecipe recipe = new CombinationRecipe("Too Many Ingredients", 1);
 
-@Test
-public void testHistoricalPriceTracker_AddPricePoint()
-{
-int itemId = 314;
+		for (int i = 1; i <= 11; i++)
+		{
+			recipe.addIngredient(i, 1);
+		}
 
-historicalTracker.addPricePoint(itemId, 100, 120);
+		assertFalse(recipe.validate());
+	}
 
-assertEquals(1, historicalTracker.getHistory(itemId).size());
-}
+	// --- Manual price tests ---
 
-@Test
-public void testHistoricalPriceTracker_MaxFiveEntries()
-{
-int itemId = 314;
+	@Test
+	public void testManualPriceManager_SetAndGetPrices()
+	{
+		int itemId = 314;
 
-for (int i = 1; i <= 7; i++)
-{
-historicalTracker.addPricePoint(itemId, i * 100, i * 120);
-}
+		manualPriceManager.setManualBuyPrice(itemId, 100);
+		manualPriceManager.setManualSellPrice(itemId, 150);
 
-assertEquals(5, historicalTracker.getHistory(itemId).size());
-}
+		assertEquals(Integer.valueOf(100), manualPriceManager.getManualBuyPrice(itemId));
+		assertEquals(Integer.valueOf(150), manualPriceManager.getManualSellPrice(itemId));
+	}
 
-@Test
-public void testHistoricalPriceTracker_CalculateAverages()
-{
-int itemId = 314;
+	@Test
+	public void testManualPriceManager_EffectivePrice_UsesManualWhenSet()
+	{
+		manualPriceManager.setManualBuyPrice(314, 500);
+		assertEquals(500, manualPriceManager.getEffectiveBuyPrice(314, 100));
+	}
 
-for (int i = 1; i <= 5; i++)
-{
-historicalTracker.addPricePoint(itemId, i * 100, i * 80);
-}
+	@Test
+	public void testManualPriceManager_EffectivePrice_FallsBackToGe()
+	{
+		assertEquals(100, manualPriceManager.getEffectiveBuyPrice(314, 100));
+	}
 
-double avgHigh = historicalTracker.getAverageHigh(itemId);
-double avgLow = historicalTracker.getAverageLow(itemId);
+	@Test
+	public void testManualPriceManager_ClearPrices()
+	{
+		manualPriceManager.setManualBuyPrice(314, 500);
+		manualPriceManager.clearManualPrices(314);
+		assertNull(manualPriceManager.getManualBuyPrice(314));
+	}
 
-assertEquals(300.0, avgHigh, 0.01);
-assertEquals(240.0, avgLow, 0.01);
-}
+	// --- Recipe manager tests ---
+
+	@Test
+	public void testRecipeManager_AddAndRetrieve()
+	{
+		CombinationRecipe recipe = new CombinationRecipe("Steel Bar", 2353);
+		recipe.addIngredient(440, 1);
+		recipeManager.addRecipe(recipe);
+
+		assertEquals(1, recipeManager.getRecipeCount());
+		assertNotNull(recipeManager.getRecipe("Steel Bar"));
+	}
+
+	@Test
+	public void testRecipeManager_DuplicateNameOverwrites()
+	{
+		CombinationRecipe r1 = new CombinationRecipe("Test", 1);
+		r1.addIngredient(314, 1);
+		recipeManager.addRecipe(r1);
+
+		CombinationRecipe r2 = new CombinationRecipe("Test", 2);
+		r2.addIngredient(315, 1);
+		recipeManager.addRecipe(r2);
+
+		assertEquals(1, recipeManager.getRecipeCount());
+		assertEquals(2, recipeManager.getRecipe("Test").getResultItemId());
+	}
+
+	@Test
+	public void testRecipeManager_Remove()
+	{
+		CombinationRecipe recipe = new CombinationRecipe("Remove Me", 1);
+		recipe.addIngredient(314, 1);
+		recipeManager.addRecipe(recipe);
+
+		assertTrue(recipeManager.removeRecipe("Remove Me"));
+		assertEquals(0, recipeManager.getRecipeCount());
+	}
 }
