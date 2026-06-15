@@ -27,6 +27,10 @@ package net.runelite.client.plugins.osrsflip;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -74,6 +78,8 @@ public class OsrsFlipPlugin extends Plugin
 	private ManualPriceManager manualPriceManager;
 	private CombinationRecipeManager recipeManager;
 	private DataManager dataManager;
+	private ScheduledExecutorService executor;
+	private ScheduledFuture<?> autoRefreshTask;
 
 	@Override
 	protected void startUp()
@@ -112,15 +118,49 @@ public class OsrsFlipPlugin extends Plugin
 		panel.refreshWatchlist();
 		panel.refreshCombinations();
 
+		// Start auto-refresh timer
+		executor = Executors.newSingleThreadScheduledExecutor();
+		scheduleAutoRefresh();
+
 		log.debug("OSRS Flip Plugin started!");
 	}
 
 	@Override
 	protected void shutDown()
 	{
+		if (autoRefreshTask != null)
+		{
+			autoRefreshTask.cancel(false);
+		}
+		executor.shutdownNow();
+
 		dataManager.save(panel.getWatchlist(), manualPriceManager, recipeManager);
 		clientToolbar.removeNavigation(navButton);
 		log.debug("OSRS Flip Plugin stopped!");
+	}
+
+	private void scheduleAutoRefresh()
+	{
+		if (autoRefreshTask != null)
+		{
+			autoRefreshTask.cancel(false);
+		}
+
+		if (!config.autoRefresh())
+		{
+			return;
+		}
+
+		int minutes = Math.max(1, config.autoRefreshMinutes());
+		autoRefreshTask = executor.scheduleAtFixedRate(() ->
+		{
+			if (config.autoRefresh())
+			{
+				log.debug("Auto-refreshing prices (every {} min)", minutes);
+				panel.refreshWatchlist();
+				panel.refreshCombinations();
+			}
+		}, minutes, minutes, TimeUnit.MINUTES);
 	}
 
 	@Provides

@@ -70,11 +70,35 @@ public interface OsrsFlipConfig extends Config
 	// --- Prices ---
 
 	@ConfigItem(
+		keyName = "autoRefresh",
+		name = "Auto-Refresh Prices",
+		description = "Automatically refresh all prices on a timer",
+		section = pricesSection,
+		position = 0
+	)
+	default boolean autoRefresh()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "autoRefreshMinutes",
+		name = "Refresh Interval (min)",
+		description = "How often to auto-refresh prices, in minutes",
+		section = pricesSection,
+		position = 1
+	)
+	default int autoRefreshMinutes()
+	{
+		return 10;
+	}
+
+	@ConfigItem(
 		keyName = "useWikiPrices",
 		name = "Use Wiki Prices",
 		description = "Fetch real-time prices from the OSRS Wiki API instead of RuneLite's cache",
 		section = pricesSection,
-		position = 0
+		position = 2
 	)
 	default boolean useWikiPrices()
 	{
