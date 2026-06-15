@@ -38,6 +38,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
+import okhttp3.OkHttpClient;
 
 @Slf4j
 @PluginDescriptor(
@@ -65,6 +66,9 @@ public class OsrsFlipPlugin extends Plugin
 	@Inject
 	private Gson gson;
 
+	@Inject
+	private OkHttpClient okHttpClient;
+
 	private NavigationButton navButton;
 	private OsrsFlipPanel panel;
 	private ManualPriceManager manualPriceManager;
@@ -78,6 +82,7 @@ public class OsrsFlipPlugin extends Plugin
 		ProfitCalculator profitCalculator = new ProfitCalculator();
 		recipeManager = new CombinationRecipeManager();
 		dataManager = new DataManager(gson);
+		WikiPriceManager wikiPriceManager = new WikiPriceManager(okHttpClient, gson);
 
 		panel = new OsrsFlipPanel(
 			itemManager,
@@ -86,6 +91,7 @@ public class OsrsFlipPlugin extends Plugin
 			profitCalculator,
 			recipeManager,
 			dataManager,
+			wikiPriceManager,
 			config
 		);
 
