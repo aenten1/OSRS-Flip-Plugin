@@ -229,8 +229,8 @@ public class WikiPriceManager
 		{
 			return -1;
 		}
-		int result = applyOffset(price, config.buyOffsetGp(), config.buyOffsetPercent());
-		return applyRounding(result, config.buyRoundInterval(), config.buyRoundUp());
+		int result = applyOffset(price, config.buyOffsetGp(), parseDoubleSafe(config.buyOffsetPercent()));
+		return applyRounding(result, config.buyRoundInterval());
 	}
 
 	/**
@@ -243,8 +243,8 @@ public class WikiPriceManager
 		{
 			return -1;
 		}
-		int result = applyOffset(price, config.sellOffsetGp(), config.sellOffsetPercent());
-		return applyRounding(result, config.sellRoundInterval(), config.sellRoundUp());
+		int result = applyOffset(price, config.sellOffsetGp(), parseDoubleSafe(config.sellOffsetPercent()));
+		return applyRounding(result, config.sellRoundInterval());
 	}
 
 	/**
@@ -353,19 +353,35 @@ public class WikiPriceManager
 		return Math.max(0, (int) Math.round(result));
 	}
 
-	private int applyRounding(int price, int interval, boolean roundUp)
+	/**
+	 * Rounds price to nearest interval. Positive interval = round up, negative = round down.
+	 */
+	private int applyRounding(int price, int interval)
 	{
-		if (interval <= 0 || price <= 0)
+		if (interval == 0 || price <= 0)
 		{
 			return price;
 		}
-		if (roundUp)
+		int abs = Math.abs(interval);
+		if (interval > 0)
 		{
-			return ((price + interval - 1) / interval) * interval;
+			return ((price + abs - 1) / abs) * abs;
 		}
 		else
 		{
-			return (price / interval) * interval;
+			return (price / abs) * abs;
+		}
+	}
+
+	private double parseDoubleSafe(String s)
+	{
+		try
+		{
+			return Double.parseDouble(s.trim());
+		}
+		catch (Exception e)
+		{
+			return 0.0;
 		}
 	}
 

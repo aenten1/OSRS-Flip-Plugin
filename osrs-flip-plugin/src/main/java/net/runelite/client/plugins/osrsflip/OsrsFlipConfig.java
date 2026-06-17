@@ -28,6 +28,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Range;
 
 @ConfigGroup("osrsflip")
 public interface OsrsFlipConfig extends Config
@@ -131,10 +132,11 @@ public interface OsrsFlipConfig extends Config
 
 	// --- Offsets ---
 
+	@Range(min = -1000000000)
 	@ConfigItem(
 		keyName = "buyOffsetGp",
 		name = "Buy Offset (GP)",
-		description = "Fixed GP amount added to buy price (e.g. 5000 to buy 5k above market)",
+		description = "GP added to buy price. Negative to lower.",
 		section = offsetsSection,
 		position = 0
 	)
@@ -146,19 +148,20 @@ public interface OsrsFlipConfig extends Config
 	@ConfigItem(
 		keyName = "buyOffsetPercent",
 		name = "Buy Offset (%)",
-		description = "Percentage added to buy price (e.g. 0.5 to buy 0.5% above market)",
+		description = "Percent added to buy price (e.g. 10.2 or -0.5)",
 		section = offsetsSection,
 		position = 1
 	)
-	default double buyOffsetPercent()
+	default String buyOffsetPercent()
 	{
-		return 0.0;
+		return "0";
 	}
 
+	@Range(min = -1000000000)
 	@ConfigItem(
 		keyName = "sellOffsetGp",
 		name = "Sell Offset (GP)",
-		description = "Fixed GP amount added to sell price (e.g. -5000 to sell 5k below market)",
+		description = "GP added to sell price. Negative to lower.",
 		section = offsetsSection,
 		position = 2
 	)
@@ -170,19 +173,20 @@ public interface OsrsFlipConfig extends Config
 	@ConfigItem(
 		keyName = "sellOffsetPercent",
 		name = "Sell Offset (%)",
-		description = "Percentage added to sell price (e.g. -0.5 to sell 0.5% below market)",
+		description = "Percent added to sell price (e.g. -0.5)",
 		section = offsetsSection,
 		position = 3
 	)
-	default double sellOffsetPercent()
+	default String sellOffsetPercent()
 	{
-		return 0.0;
+		return "0";
 	}
 
+	@Range(min = -1000000000)
 	@ConfigItem(
 		keyName = "buyRoundInterval",
-		name = "Buy Round Interval",
-		description = "Round buy price to the nearest interval (e.g. 5000 rounds 2122415 to 2125000). 0 = no rounding.",
+		name = "Buy Round (GP)",
+		description = "Round buy price to nearest interval. Positive = up, negative = down. 0 = off.",
 		section = offsetsSection,
 		position = 4
 	)
@@ -191,40 +195,17 @@ public interface OsrsFlipConfig extends Config
 		return 0;
 	}
 
-	@ConfigItem(
-		keyName = "buyRoundUp",
-		name = "Buy Round Up",
-		description = "When enabled, buy price rounds up. When disabled, rounds down.",
-		section = offsetsSection,
-		position = 5
-	)
-	default boolean buyRoundUp()
-	{
-		return true;
-	}
-
+	@Range(min = -1000000000)
 	@ConfigItem(
 		keyName = "sellRoundInterval",
-		name = "Sell Round Interval",
-		description = "Round sell price to the nearest interval (e.g. 5000 rounds 2127800 to 2125000). 0 = no rounding.",
+		name = "Sell Round (GP)",
+		description = "Round sell price to nearest interval. Positive = up, negative = down. 0 = off.",
 		section = offsetsSection,
-		position = 6
+		position = 5
 	)
 	default int sellRoundInterval()
 	{
 		return 0;
-	}
-
-	@ConfigItem(
-		keyName = "sellRoundUp",
-		name = "Sell Round Up",
-		description = "When enabled, sell price rounds up. When disabled, rounds down.",
-		section = offsetsSection,
-		position = 7
-	)
-	default boolean sellRoundUp()
-	{
-		return false;
 	}
 
 }
