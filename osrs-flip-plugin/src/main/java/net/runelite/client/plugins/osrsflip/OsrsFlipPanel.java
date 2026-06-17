@@ -828,8 +828,9 @@ public class OsrsFlipPanel extends PluginPanel
 		JPanel header = new JPanel(new BorderLayout());
 		header.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-		JLabel nameLabel = new JLabel(name);
+		JLabel nameLabel = new JLabel(truncate(name, 18));
 		nameLabel.setForeground(Color.WHITE);
+		nameLabel.setToolTipText(name);
 		header.add(nameLabel, BorderLayout.WEST);
 
 		JPanel headerButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
@@ -1300,8 +1301,9 @@ public class OsrsFlipPanel extends PluginPanel
 		});
 		namePanel.add(collapseBtn);
 
-		JLabel nameLabel = new JLabel(recipe.getName());
+		JLabel nameLabel = new JLabel(truncate(recipe.getName(), 16));
 		nameLabel.setForeground(Color.WHITE);
+		nameLabel.setToolTipText(recipe.getName());
 		namePanel.add(nameLabel);
 
 		topBar.add(namePanel, BorderLayout.WEST);
@@ -1437,6 +1439,15 @@ public class OsrsFlipPanel extends PluginPanel
 
 		g.dispose();
 		return img;
+	}
+
+	private String truncate(String text, int maxLen)
+	{
+		if (text == null || text.length() <= maxLen)
+		{
+			return text;
+		}
+		return text.substring(0, maxLen - 1) + "\u2026";
 	}
 
 	private void addLine(JPanel container, String text, Color color)
