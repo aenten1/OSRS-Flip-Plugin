@@ -57,6 +57,7 @@ public class DataManager
 			RecipeEntry entry = new RecipeEntry();
 			entry.name = recipe.getName();
 			entry.resultItemId = recipe.getResultItemId();
+			entry.resultQuantity = recipe.getResultQuantity();
 			entry.ingredients = new HashMap<>(recipe.getIngredients());
 			entry.applyOffsets = recipe.isApplyOffsets();
 			entry.collapsed = recipe.isCollapsed();
@@ -120,7 +121,8 @@ public class DataManager
 			{
 				for (RecipeEntry entry : data.recipes)
 				{
-					CombinationRecipe recipe = new CombinationRecipe(entry.name, entry.resultItemId);
+					int qty = entry.resultQuantity > 0 ? entry.resultQuantity : 1;
+					CombinationRecipe recipe = new CombinationRecipe(entry.name, entry.resultItemId, qty);
 					recipe.setApplyOffsets(entry.applyOffsets);
 					recipe.setCollapsed(entry.collapsed);
 					if (entry.ingredients != null)
@@ -160,6 +162,7 @@ public class DataManager
 	{
 		String name;
 		int resultItemId;
+		int resultQuantity = 1;
 		Map<Integer, Integer> ingredients;
 		boolean applyOffsets;
 		boolean collapsed;

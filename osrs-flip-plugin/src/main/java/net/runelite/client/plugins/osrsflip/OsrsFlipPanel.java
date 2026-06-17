@@ -1005,10 +1005,18 @@ public class OsrsFlipPanel extends PluginPanel
 		resultPreview.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
 		topSection.add(resultPreview);
 
+		JPanel resultQtyRow = new JPanel(new BorderLayout(5, 0));
+		resultQtyRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+		resultQtyRow.add(new JLabel("Result Qty:"), BorderLayout.WEST);
+		JTextField resultQtyField = new JTextField("1");
+		resultQtyRow.add(resultQtyField, BorderLayout.CENTER);
+		topSection.add(resultQtyRow);
+
 		if (editingRecipe != null)
 		{
 			nameField.setText(editingRecipe.getName());
 			resultField.setText(String.valueOf(editingRecipe.getResultItemId()));
+			resultQtyField.setText(String.valueOf(editingRecipe.getResultQuantity()));
 		}
 
 		panel.add(topSection, BorderLayout.NORTH);
@@ -1099,7 +1107,7 @@ public class OsrsFlipPanel extends PluginPanel
 			}
 
 			// Validate inputs
-			String validationError = validateRecipeDialog(nameField, resultField, ingredientRows, editingRecipe);
+			String validationError = validateRecipeDialog(nameField, resultField, resultQtyField, ingredientRows, editingRecipe);
 			if (validationError != null)
 			{
 				JOptionPane.showMessageDialog(this, validationError,
@@ -1127,7 +1135,8 @@ public class OsrsFlipPanel extends PluginPanel
 				recipeManager.removeRecipe(editingRecipe.getName());
 			}
 
-			CombinationRecipe recipe = new CombinationRecipe(rName, resultId);
+			int resultQty = Integer.parseInt(resultQtyField.getText().trim());
+			CombinationRecipe recipe = new CombinationRecipe(rName, resultId, resultQty);
 			for (Object[] fields : ingredientRows)
 			{
 				String idText = ((JTextField) fields[0]).getText().trim();
@@ -1146,7 +1155,7 @@ public class OsrsFlipPanel extends PluginPanel
 	}
 
 	private String validateRecipeDialog(JTextField nameField, JTextField resultField,
-		List<Object[]> ingredientRows, CombinationRecipe editingRecipe)
+		JTextField resultQtyField, List<Object[]> ingredientRows, CombinationRecipe editingRecipe)
 	{
 		String rName = nameField.getText().trim();
 		if (rName.isEmpty())
@@ -1166,6 +1175,20 @@ public class OsrsFlipPanel extends PluginPanel
 		catch (NumberFormatException e)
 		{
 			return "Result item ID must be a valid number: \"" + resultText + "\"";
+		}
+
+		String resultQtyText = resultQtyField.getText().trim();
+		try
+		{
+			int qty = Integer.parseInt(resultQtyText);
+			if (qty <= 0)
+			{
+				return "Result quantity must be a positive number.";
+			}
+		}
+		catch (NumberFormatException e)
+		{
+			return "Result quantity must be a valid number: \"" + resultQtyText + "\"";
 		}
 
 		int validIngredients = 0;
@@ -1264,7 +1287,9 @@ public class OsrsFlipPanel extends PluginPanel
 		}
 
 		String resultName = getCachedName(recipe.getResultItemId());
-		int resultPrice = useOffsets ? getCachedSellPrice(recipe.getResultItemId()) : getCachedRawSellPrice(recipe.getResultItemId());
+		int resultQty = recipe.getResultQuantity();
+		int unitSellPrice = useOffsets ? getCachedSellPrice(recipe.getResultItemId()) : getCachedRawSellPrice(recipe.getResultItemId());
+		int resultPrice = unitSellPrice > 0 ? unitSellPrice * resultQty : unitSellPrice;
 		int tax = resultPrice > 0 ? profitCalculator.calculateTax(resultPrice) : 0;
 		int profit = profitCalculator.calculateCombinationProfit(recipe, totalIngredientCost, resultPrice);
 		Color profitColor = profit >= 0 ? ColorScheme.PROGRESS_COMPLETE_COLOR : Color.RED;
@@ -1376,7 +1401,8 @@ public class OsrsFlipPanel extends PluginPanel
 				int unitPrice = useOffsets ? getCachedBuyPrice(entry.getKey()) : getCachedRawBuyPrice(entry.getKey());
 				addLine(body, GP_FORMAT.format(entry.getValue()) + "x " + ingName + ": " + formatGp(unitPrice), ColorScheme.LIGHT_GRAY_COLOR);
 			}
-			addLine(body, resultName + ": " + formatGp(resultPrice), Color.WHITE);
+			String rQtyStr = resultQty > 1 ? resultQty + "x " : "";
+			addLine(body, rQtyStr + resultName + ": " + formatGp(resultPrice), Color.WHITE);
 			addLine(body, "Profit: " + formatGp(profit), profitColor);
 		}
 		else
@@ -1395,7 +1421,10 @@ public class OsrsFlipPanel extends PluginPanel
 			}
 
 			addLine(body, "---", ColorScheme.MEDIUM_GRAY_COLOR);
-			addLine(body, "Sell: " + formatGp(resultPrice), Color.WHITE);
+			String sellLabel = resultQty > 1
+				? "Sell: " + resultQty + "x @ " + formatGp(unitSellPrice) + " = " + formatGp(resultPrice)
+				: "Sell: " + formatGp(resultPrice);
+			addLine(body, sellLabel, Color.WHITE);
 			addLine(body, "GE Tax: -" + formatGp(tax), new Color(255, 180, 100));
 			addLine(body, "Cost: -" + formatGp(totalIngredientCost), ColorScheme.LIGHT_GRAY_COLOR);
 			addLine(body, "Profit: " + formatGp(profit), profitColor);

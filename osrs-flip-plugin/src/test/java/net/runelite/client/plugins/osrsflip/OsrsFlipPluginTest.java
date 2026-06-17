@@ -119,7 +119,7 @@ public class OsrsFlipPluginTest
 	@Test
 	public void testCombinationRecipe_AddIngredients()
 	{
-		CombinationRecipe recipe = new CombinationRecipe("Test Recipe", 1);
+		CombinationRecipe recipe = new CombinationRecipe("Test Recipe", 1, 1);
 
 		recipe.addIngredient(314, 2);
 		recipe.addIngredient(315, 1);
@@ -130,9 +130,23 @@ public class OsrsFlipPluginTest
 	}
 
 	@Test
+	public void testCombinationRecipe_ResultQuantity()
+	{
+		CombinationRecipe recipe = new CombinationRecipe("Multi Result", 1, 5);
+		assertEquals(5, recipe.getResultQuantity());
+	}
+
+	@Test
+	public void testCombinationRecipe_ResultQuantity_ClampedToMinimumOne()
+	{
+		assertEquals(1, new CombinationRecipe("Zero Qty", 1, 0).getResultQuantity());
+		assertEquals(1, new CombinationRecipe("Negative Qty", 1, -3).getResultQuantity());
+	}
+
+	@Test
 	public void testCombinationRecipe_Validate_Valid()
 	{
-		CombinationRecipe recipe = new CombinationRecipe("Valid Recipe", 1);
+		CombinationRecipe recipe = new CombinationRecipe("Valid Recipe", 1, 1);
 		recipe.addIngredient(314, 2);
 		recipe.addIngredient(315, 1);
 
@@ -142,7 +156,7 @@ public class OsrsFlipPluginTest
 	@Test
 	public void testCombinationRecipe_Validate_TooManyIngredients()
 	{
-		CombinationRecipe recipe = new CombinationRecipe("Too Many Ingredients", 1);
+		CombinationRecipe recipe = new CombinationRecipe("Too Many Ingredients", 1, 1);
 
 		for (int i = 1; i <= 11; i++)
 		{
@@ -192,7 +206,7 @@ public class OsrsFlipPluginTest
 	@Test
 	public void testRecipeManager_AddAndRetrieve()
 	{
-		CombinationRecipe recipe = new CombinationRecipe("Steel Bar", 2353);
+		CombinationRecipe recipe = new CombinationRecipe("Steel Bar", 2353, 1);
 		recipe.addIngredient(440, 1);
 		recipeManager.addRecipe(recipe);
 
@@ -203,11 +217,11 @@ public class OsrsFlipPluginTest
 	@Test
 	public void testRecipeManager_DuplicateNameOverwrites()
 	{
-		CombinationRecipe r1 = new CombinationRecipe("Test", 1);
+		CombinationRecipe r1 = new CombinationRecipe("Test", 1, 1);
 		r1.addIngredient(314, 1);
 		recipeManager.addRecipe(r1);
 
-		CombinationRecipe r2 = new CombinationRecipe("Test", 2);
+		CombinationRecipe r2 = new CombinationRecipe("Test", 2, 1);
 		r2.addIngredient(315, 1);
 		recipeManager.addRecipe(r2);
 
@@ -218,7 +232,7 @@ public class OsrsFlipPluginTest
 	@Test
 	public void testRecipeManager_Remove()
 	{
-		CombinationRecipe recipe = new CombinationRecipe("Remove Me", 1);
+		CombinationRecipe recipe = new CombinationRecipe("Remove Me", 1, 1);
 		recipe.addIngredient(314, 1);
 		recipeManager.addRecipe(recipe);
 
