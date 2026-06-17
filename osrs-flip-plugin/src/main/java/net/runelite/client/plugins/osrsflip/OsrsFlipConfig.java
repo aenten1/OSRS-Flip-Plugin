@@ -145,16 +145,17 @@ public interface OsrsFlipConfig extends Config
 		return 0;
 	}
 
+	@Range(min = -100)
 	@ConfigItem(
 		keyName = "buyOffsetPercent",
 		name = "Buy Offset (%)",
-		description = "Percent added to buy price (e.g. 10.2 or -0.5)",
+		description = "Percent added to buy price. Negative to lower.",
 		section = offsetsSection,
 		position = 1
 	)
-	default String buyOffsetPercent()
+	default int buyOffsetPercent()
 	{
-		return "0";
+		return 0;
 	}
 
 	@Range(min = -1000000000)
@@ -170,16 +171,17 @@ public interface OsrsFlipConfig extends Config
 		return 0;
 	}
 
+	@Range(min = -100)
 	@ConfigItem(
 		keyName = "sellOffsetPercent",
 		name = "Sell Offset (%)",
-		description = "Percent added to sell price (e.g. -0.5)",
+		description = "Percent added to sell price. Negative to lower.",
 		section = offsetsSection,
 		position = 3
 	)
-	default String sellOffsetPercent()
+	default int sellOffsetPercent()
 	{
-		return "0";
+		return 0;
 	}
 
 	@Range(min = -1000000000)

@@ -229,7 +229,7 @@ public class WikiPriceManager
 		{
 			return -1;
 		}
-		int result = applyOffset(price, config.buyOffsetGp(), parseDoubleSafe(config.buyOffsetPercent()));
+		int result = applyOffset(price, config.buyOffsetGp(), (double) config.buyOffsetPercent());
 		return applyRounding(result, config.buyRoundInterval());
 	}
 
@@ -243,7 +243,7 @@ public class WikiPriceManager
 		{
 			return -1;
 		}
-		int result = applyOffset(price, config.sellOffsetGp(), parseDoubleSafe(config.sellOffsetPercent()));
+		int result = applyOffset(price, config.sellOffsetGp(), (double) config.sellOffsetPercent());
 		return applyRounding(result, config.sellRoundInterval());
 	}
 
@@ -370,18 +370,6 @@ public class WikiPriceManager
 		else
 		{
 			return (price / abs) * abs;
-		}
-	}
-
-	private double parseDoubleSafe(String s)
-	{
-		try
-		{
-			return Double.parseDouble(s.trim());
-		}
-		catch (Exception e)
-		{
-			return 0.0;
 		}
 	}
 
