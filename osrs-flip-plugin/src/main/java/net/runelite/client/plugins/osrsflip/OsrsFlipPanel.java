@@ -85,8 +85,10 @@ public class OsrsFlipPanel extends PluginPanel
 
 	@Getter
 	private final List<Integer> watchlist = new ArrayList<>();
+	@Getter
+	private final Map<Integer, Boolean> watchlistOffsets = new ConcurrentHashMap<>();
 	private final Map<Integer, String> nameCache = new ConcurrentHashMap<>();
-	private final Map<Integer, int[]> priceCache = new ConcurrentHashMap<>();
+	private final Map<Integer, int[]> priceCache = new ConcurrentHashMap<>(); // [buy, sell, rawBuy, rawSell]
 
 	private JPanel watchlistPanel;
 	private JPanel combinationsPanel;
@@ -596,7 +598,7 @@ public class OsrsFlipPanel extends PluginPanel
 
 	private void saveData()
 	{
-		dataManager.save(watchlist, manualPriceManager, recipeManager);
+		dataManager.save(watchlist, watchlistOffsets, manualPriceManager, recipeManager);
 	}
 
 	public void refreshWatchlist()
@@ -638,7 +640,9 @@ public class OsrsFlipPanel extends PluginPanel
 				{
 					int buy = wikiPriceManager.getBuyPrice(itemId, config);
 					int sell = wikiPriceManager.getSellPrice(itemId, config);
-					priceCache.put(itemId, new int[]{buy, sell});
+					int rawBuy = wikiPriceManager.getRawBuyPrice(itemId, config);
+					int rawSell = wikiPriceManager.getRawSellPrice(itemId, config);
+					priceCache.put(itemId, new int[]{buy, sell, rawBuy, rawSell});
 				}
 
 				// Cache names + ItemManager fallback on client thread, then update UI
@@ -655,7 +659,7 @@ public class OsrsFlipPanel extends PluginPanel
 							int fallback = itemManager.getItemPrice(itemId);
 							if (fallback > 0)
 							{
-								priceCache.put(itemId, new int[]{fallback, fallback});
+								priceCache.put(itemId, new int[]{fallback, fallback, fallback, fallback});
 							}
 						}
 					}
@@ -673,12 +677,12 @@ public class OsrsFlipPanel extends PluginPanel
 					try
 					{
 						int price = itemManager.getItemPrice(itemId);
-						priceCache.put(itemId, new int[]{price, price});
+						priceCache.put(itemId, new int[]{price, price, price, price});
 					}
 					catch (Exception e)
 					{
 						log.debug("Failed to get price for item {}", itemId);
-						priceCache.put(itemId, new int[]{-1, -1});
+						priceCache.put(itemId, new int[]{-1, -1, -1, -1});
 					}
 				}
 				SwingUtilities.invokeLater(uiCallback);
@@ -717,6 +721,18 @@ public class OsrsFlipPanel extends PluginPanel
 	{
 		int[] prices = priceCache.get(itemId);
 		return prices != null ? prices[1] : -1;
+	}
+
+	private int getCachedRawBuyPrice(int itemId)
+	{
+		int[] prices = priceCache.get(itemId);
+		return prices != null && prices.length > 2 ? prices[2] : getCachedBuyPrice(itemId);
+	}
+
+	private int getCachedRawSellPrice(int itemId)
+	{
+		int[] prices = priceCache.get(itemId);
+		return prices != null && prices.length > 3 ? prices[3] : getCachedSellPrice(itemId);
 	}
 
 	private JTabbedPane buildTabs()
@@ -797,13 +813,15 @@ public class OsrsFlipPanel extends PluginPanel
 
 	private JPanel buildItemRow(int itemId)
 	{
+		boolean useOffsets = watchlistOffsets.getOrDefault(itemId, false);
+
 		JPanel row = new JPanel(new BorderLayout(5, 2));
 		row.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.MEDIUM_GRAY_COLOR),
 			new EmptyBorder(8, 5, 8, 5)
 		));
 		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
 
 		String name = getCachedName(itemId);
 
@@ -832,6 +850,7 @@ public class OsrsFlipPanel extends PluginPanel
 		removeBtn.addActionListener(e ->
 		{
 			watchlist.remove(Integer.valueOf(itemId));
+			watchlistOffsets.remove(itemId);
 			manualPriceManager.clearManualPrices(itemId);
 			saveData();
 			refreshWatchlist();
@@ -839,10 +858,41 @@ public class OsrsFlipPanel extends PluginPanel
 		headerButtons.add(removeBtn);
 
 		header.add(headerButtons, BorderLayout.EAST);
-		row.add(header, BorderLayout.NORTH);
 
-		int geBuy = getCachedBuyPrice(itemId);
-		int geSell = getCachedSellPrice(itemId);
+		// Options bar with offset toggle
+		JPanel optionsBar = new JPanel(new BorderLayout());
+		optionsBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+		JLabel offsetLabel = new JLabel("Apply Offsets");
+		offsetLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		optionsBar.add(offsetLabel, BorderLayout.WEST);
+
+		JLabel toggleLabel = new JLabel(new ImageIcon(createToggleIcon(useOffsets)));
+		toggleLabel.setToolTipText("Apply buy/sell offsets and rounding");
+		toggleLabel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+		toggleLabel.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				boolean newVal = !watchlistOffsets.getOrDefault(itemId, false);
+				watchlistOffsets.put(itemId, newVal);
+				saveData();
+				rebuildWatchlistUi();
+			}
+		});
+		optionsBar.add(toggleLabel, BorderLayout.EAST);
+
+		JPanel headerPanel = new JPanel();
+		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+		headerPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		headerPanel.add(header);
+		headerPanel.add(optionsBar);
+
+		row.add(headerPanel, BorderLayout.NORTH);
+
+		int geBuy = useOffsets ? getCachedBuyPrice(itemId) : getCachedRawBuyPrice(itemId);
+		int geSell = useOffsets ? getCachedSellPrice(itemId) : getCachedRawSellPrice(itemId);
 
 		int effectiveBuy = manualPriceManager.getEffectiveBuyPrice(itemId, geBuy);
 		int effectiveSell = manualPriceManager.getEffectiveSellPrice(itemId, geSell);
@@ -1201,10 +1251,22 @@ public class OsrsFlipPanel extends PluginPanel
 
 	private JPanel buildRecipeRow(CombinationRecipe recipe)
 	{
-		// Each ingredient = 2 lines, plus separator + sell + tax + cost + profit = 5 lines
-		// topBar ~28px, each line ~16px, border padding ~8px
-		int lineCount = recipe.getIngredients().size() * 2 + 5;
-		int estimatedHeight = 28 + lineCount * 16 + 12;
+		boolean collapsed = recipe.isCollapsed();
+		boolean useOffsets = recipe.isApplyOffsets();
+
+		// Calculate prices regardless of collapsed state (needed for summary)
+		int totalIngredientCost = 0;
+		for (Map.Entry<Integer, Integer> entry : recipe.getIngredients().entrySet())
+		{
+			int unitPrice = useOffsets ? getCachedBuyPrice(entry.getKey()) : getCachedRawBuyPrice(entry.getKey());
+			totalIngredientCost += unitPrice > 0 ? unitPrice * entry.getValue() : 0;
+		}
+
+		String resultName = getCachedName(recipe.getResultItemId());
+		int resultPrice = useOffsets ? getCachedSellPrice(recipe.getResultItemId()) : getCachedRawSellPrice(recipe.getResultItemId());
+		int tax = resultPrice > 0 ? profitCalculator.calculateTax(resultPrice) : 0;
+		int profit = profitCalculator.calculateCombinationProfit(recipe, totalIngredientCost, resultPrice);
+		Color profitColor = profit >= 0 ? ColorScheme.PROGRESS_COMPLETE_COLOR : Color.RED;
 
 		JPanel row = new JPanel(new BorderLayout(0, 0));
 		row.setBorder(BorderFactory.createCompoundBorder(
@@ -1212,15 +1274,37 @@ public class OsrsFlipPanel extends PluginPanel
 			new EmptyBorder(4, 5, 4, 5)
 		));
 		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, estimatedHeight));
 
+		// Top bar: collapse toggle + name + buttons
 		JPanel topBar = new JPanel(new BorderLayout());
 		topBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		topBar.setBorder(new EmptyBorder(0, 0, 4, 0));
+		topBar.setBorder(new EmptyBorder(0, 0, 2, 0));
+
+		JPanel namePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+		namePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+		JLabel collapseBtn = new JLabel(collapsed ? "\u25B6" : "\u25BC");
+		collapseBtn.setFont(collapseBtn.getFont().deriveFont(9f));
+		collapseBtn.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		collapseBtn.setToolTipText(collapsed ? "Expand" : "Collapse");
+		collapseBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+		collapseBtn.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				recipe.setCollapsed(!recipe.isCollapsed());
+				saveData();
+				rebuildCombinationsUi();
+			}
+		});
+		namePanel.add(collapseBtn);
 
 		JLabel nameLabel = new JLabel(recipe.getName());
 		nameLabel.setForeground(Color.WHITE);
-		topBar.add(nameLabel, BorderLayout.WEST);
+		namePanel.add(nameLabel);
+
+		topBar.add(namePanel, BorderLayout.WEST);
 
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
 		buttons.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -1244,43 +1328,115 @@ public class OsrsFlipPanel extends PluginPanel
 		buttons.add(removeBtn);
 
 		topBar.add(buttons, BorderLayout.EAST);
-		row.add(topBar, BorderLayout.NORTH);
 
+		// Options bar with offset checkbox
+		JPanel optionsBar = new JPanel(new BorderLayout());
+		optionsBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+		JLabel offsetLabel = new JLabel("Apply Offsets");
+		offsetLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		optionsBar.add(offsetLabel, BorderLayout.WEST);
+
+		JLabel toggleLabel = new JLabel(new ImageIcon(createToggleIcon(recipe.isApplyOffsets())));
+		toggleLabel.setToolTipText("Apply buy/sell offsets and rounding to this recipe");
+		toggleLabel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+		toggleLabel.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				recipe.setApplyOffsets(!recipe.isApplyOffsets());
+				saveData();
+				refreshCombinations();
+			}
+		});
+		optionsBar.add(toggleLabel, BorderLayout.EAST);
+
+		JPanel headerPanel = new JPanel();
+		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+		headerPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		headerPanel.add(topBar);
+		headerPanel.add(optionsBar);
+
+		row.add(headerPanel, BorderLayout.NORTH);
+
+		// Body content
 		JPanel body = new JPanel();
 		body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
 		body.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-		int totalIngredientCost = 0;
-		for (Map.Entry<Integer, Integer> entry : recipe.getIngredients().entrySet())
+		if (collapsed)
 		{
-			int ingId = entry.getKey();
-			int qty = entry.getValue();
-			String ingName = getCachedName(ingId);
-
-			int unitPrice = getCachedBuyPrice(ingId);
-			int lineCost = unitPrice > 0 ? unitPrice * qty : 0;
-			totalIngredientCost += lineCost;
-
-			addLine(body, GP_FORMAT.format(qty) + "x " + ingName, ColorScheme.LIGHT_GRAY_COLOR);
-			addLine(body, "  @ " + formatGp(unitPrice) + " = " + formatGp(lineCost), ColorScheme.LIGHT_GRAY_COLOR);
+			// Collapsed: one line per ingredient (name + buy), result + sell, profit
+			for (Map.Entry<Integer, Integer> entry : recipe.getIngredients().entrySet())
+			{
+				String ingName = getCachedName(entry.getKey());
+				int unitPrice = useOffsets ? getCachedBuyPrice(entry.getKey()) : getCachedRawBuyPrice(entry.getKey());
+				addLine(body, GP_FORMAT.format(entry.getValue()) + "x " + ingName + ": " + formatGp(unitPrice), ColorScheme.LIGHT_GRAY_COLOR);
+			}
+			addLine(body, resultName + ": " + formatGp(resultPrice), Color.WHITE);
+			addLine(body, "Profit: " + formatGp(profit), profitColor);
 		}
+		else
+		{
+			// Expanded: full detail
+			for (Map.Entry<Integer, Integer> entry : recipe.getIngredients().entrySet())
+			{
+				int ingId = entry.getKey();
+				int qty = entry.getValue();
+				String ingName = getCachedName(ingId);
+				int unitPrice = useOffsets ? getCachedBuyPrice(ingId) : getCachedRawBuyPrice(ingId);
+				int lineCost = unitPrice > 0 ? unitPrice * qty : 0;
 
-		addLine(body, "---", ColorScheme.MEDIUM_GRAY_COLOR);
+				addLine(body, GP_FORMAT.format(qty) + "x " + ingName, ColorScheme.LIGHT_GRAY_COLOR);
+				addLine(body, "  @ " + formatGp(unitPrice) + " = " + formatGp(lineCost), ColorScheme.LIGHT_GRAY_COLOR);
+			}
 
-		String resultName = getCachedName(recipe.getResultItemId());
-		int resultPrice = getCachedSellPrice(recipe.getResultItemId());
-		int tax = resultPrice > 0 ? profitCalculator.calculateTax(resultPrice) : 0;
-		int profit = profitCalculator.calculateCombinationProfit(recipe, totalIngredientCost, resultPrice);
-
-		addLine(body, "Sell: " + formatGp(resultPrice), Color.WHITE);
-		addLine(body, "GE Tax: -" + formatGp(tax), new Color(255, 180, 100));
-		addLine(body, "Cost: -" + formatGp(totalIngredientCost), ColorScheme.LIGHT_GRAY_COLOR);
-		Color profitColor = profit >= 0 ? ColorScheme.PROGRESS_COMPLETE_COLOR : Color.RED;
-		addLine(body, "Profit: " + formatGp(profit), profitColor);
+			addLine(body, "---", ColorScheme.MEDIUM_GRAY_COLOR);
+			addLine(body, "Sell: " + formatGp(resultPrice), Color.WHITE);
+			addLine(body, "GE Tax: -" + formatGp(tax), new Color(255, 180, 100));
+			addLine(body, "Cost: -" + formatGp(totalIngredientCost), ColorScheme.LIGHT_GRAY_COLOR);
+			addLine(body, "Profit: " + formatGp(profit), profitColor);
+		}
 
 		row.add(body, BorderLayout.CENTER);
 
+		// Dynamic max height
+		int bodyLines = collapsed
+			? recipe.getIngredients().size() + 2
+			: recipe.getIngredients().size() * 2 + 5;
+		int estimatedHeight = 28 + 22 + bodyLines * 16 + 16;
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, estimatedHeight));
+
 		return row;
+	}
+
+	private BufferedImage createToggleIcon(boolean checked)
+	{
+		int s = 12;
+		BufferedImage img = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = img.createGraphics();
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+		// Square border
+		g.setColor(new Color(180, 180, 180));
+		g.drawRect(0, 0, s - 1, s - 1);
+
+		if (checked)
+		{
+			// Fill with blue
+			g.setColor(new Color(100, 200, 255));
+			g.fillRect(2, 2, s - 4, s - 4);
+
+			// Checkmark in white
+			g.setColor(Color.WHITE);
+			g.setStroke(new java.awt.BasicStroke(2));
+			g.drawLine(3, 6, 5, 9);
+			g.drawLine(5, 9, 9, 3);
+		}
+
+		g.dispose();
+		return img;
 	}
 
 	private void addLine(JPanel container, String text, Color color)
@@ -1299,7 +1455,7 @@ public class OsrsFlipPanel extends PluginPanel
 
 	private String formatGp(int amount)
 	{
-		if (amount < 0)
+		if (amount == -1)
 		{
 			return "N/A";
 		}

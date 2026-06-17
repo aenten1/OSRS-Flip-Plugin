@@ -36,17 +36,18 @@ public class DataManager
 		this.dataFile = new File(dir, FILE_NAME);
 	}
 
-	public void save(List<Integer> watchlist, ManualPriceManager manualPriceManager, CombinationRecipeManager recipeManager)
+	public void save(List<Integer> watchlist, Map<Integer, Boolean> watchlistOffsets, ManualPriceManager manualPriceManager, CombinationRecipeManager recipeManager)
 	{
 		SaveData data = new SaveData();
 
-		// Watchlist with manual prices
+		// Watchlist with manual prices and offset flags
 		for (int itemId : watchlist)
 		{
 			WatchlistEntry entry = new WatchlistEntry();
 			entry.itemId = itemId;
 			entry.manualBuyPrice = manualPriceManager.getManualBuyPrice(itemId);
 			entry.manualSellPrice = manualPriceManager.getManualSellPrice(itemId);
+			entry.applyOffsets = watchlistOffsets.getOrDefault(itemId, false);
 			data.watchlist.add(entry);
 		}
 
@@ -57,6 +58,8 @@ public class DataManager
 			entry.name = recipe.getName();
 			entry.resultItemId = recipe.getResultItemId();
 			entry.ingredients = new HashMap<>(recipe.getIngredients());
+			entry.applyOffsets = recipe.isApplyOffsets();
+			entry.collapsed = recipe.isCollapsed();
 			data.recipes.add(entry);
 		}
 
@@ -71,7 +74,7 @@ public class DataManager
 		}
 	}
 
-	public void load(List<Integer> watchlist, ManualPriceManager manualPriceManager, CombinationRecipeManager recipeManager)
+	public void load(List<Integer> watchlist, Map<Integer, Boolean> watchlistOffsets, ManualPriceManager manualPriceManager, CombinationRecipeManager recipeManager)
 	{
 		if (!dataFile.exists())
 		{
@@ -105,6 +108,10 @@ public class DataManager
 					{
 						manualPriceManager.setManualSellPrice(entry.itemId, entry.manualSellPrice);
 					}
+					if (entry.applyOffsets)
+					{
+						watchlistOffsets.put(entry.itemId, true);
+					}
 				}
 			}
 
@@ -114,6 +121,8 @@ public class DataManager
 				for (RecipeEntry entry : data.recipes)
 				{
 					CombinationRecipe recipe = new CombinationRecipe(entry.name, entry.resultItemId);
+					recipe.setApplyOffsets(entry.applyOffsets);
+					recipe.setCollapsed(entry.collapsed);
 					if (entry.ingredients != null)
 					{
 						for (Map.Entry<Integer, Integer> ing : entry.ingredients.entrySet())
@@ -144,6 +153,7 @@ public class DataManager
 		int itemId;
 		Integer manualBuyPrice;
 		Integer manualSellPrice;
+		boolean applyOffsets;
 	}
 
 	static class RecipeEntry
@@ -151,5 +161,7 @@ public class DataManager
 		String name;
 		int resultItemId;
 		Map<Integer, Integer> ingredients;
+		boolean applyOffsets;
+		boolean collapsed;
 	}
 }

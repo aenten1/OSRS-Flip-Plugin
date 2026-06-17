@@ -182,7 +182,7 @@ public interface OsrsFlipConfig extends Config
 	@ConfigItem(
 		keyName = "buyRoundInterval",
 		name = "Buy Round Interval",
-		description = "Round buy price up to the nearest interval (e.g. 5000 rounds 2122415 to 2125000). 0 = no rounding.",
+		description = "Round buy price to the nearest interval (e.g. 5000 rounds 2122415 to 2125000). 0 = no rounding.",
 		section = offsetsSection,
 		position = 4
 	)
@@ -192,14 +192,39 @@ public interface OsrsFlipConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "sellRoundInterval",
-		name = "Sell Round Interval",
-		description = "Round sell price down to the nearest interval (e.g. 5000 rounds 2127800 to 2125000). 0 = no rounding.",
+		keyName = "buyRoundUp",
+		name = "Buy Round Up",
+		description = "When enabled, buy price rounds up. When disabled, rounds down.",
 		section = offsetsSection,
 		position = 5
+	)
+	default boolean buyRoundUp()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "sellRoundInterval",
+		name = "Sell Round Interval",
+		description = "Round sell price to the nearest interval (e.g. 5000 rounds 2127800 to 2125000). 0 = no rounding.",
+		section = offsetsSection,
+		position = 6
 	)
 	default int sellRoundInterval()
 	{
 		return 0;
 	}
+
+	@ConfigItem(
+		keyName = "sellRoundUp",
+		name = "Sell Round Up",
+		description = "When enabled, sell price rounds up. When disabled, rounds down.",
+		section = offsetsSection,
+		position = 7
+	)
+	default boolean sellRoundUp()
+	{
+		return false;
+	}
+
 }

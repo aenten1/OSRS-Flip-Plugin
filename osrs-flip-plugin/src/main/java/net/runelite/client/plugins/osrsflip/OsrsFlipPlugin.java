@@ -102,7 +102,7 @@ public class OsrsFlipPlugin extends Plugin
 		);
 
 		// Load saved data
-		dataManager.load(panel.getWatchlist(), manualPriceManager, recipeManager);
+		dataManager.load(panel.getWatchlist(), panel.getWatchlistOffsets(), manualPriceManager, recipeManager);
 
 		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/net/runelite/client/plugins/osrsflip/icon.png");
 
@@ -134,7 +134,7 @@ public class OsrsFlipPlugin extends Plugin
 		}
 		executor.shutdownNow();
 
-		dataManager.save(panel.getWatchlist(), manualPriceManager, recipeManager);
+		dataManager.save(panel.getWatchlist(), panel.getWatchlistOffsets(), manualPriceManager, recipeManager);
 		clientToolbar.removeNavigation(navButton);
 		log.debug("OSRS Flip Plugin stopped!");
 	}

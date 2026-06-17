@@ -7,6 +7,7 @@ package net.runelite.client.plugins.osrsflip;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Represents a combination recipe for crafting items.
@@ -17,6 +18,10 @@ public class CombinationRecipe
 private final String name;
 private final int resultItemId;
 private final Map<Integer, Integer> ingredients;
+@Setter
+private boolean applyOffsets;
+@Setter
+private boolean collapsed;
 
 public CombinationRecipe(String name, int resultItemId)
 {

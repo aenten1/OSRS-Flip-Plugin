@@ -230,7 +230,7 @@ public class WikiPriceManager
 			return -1;
 		}
 		int result = applyOffset(price, config.buyOffsetGp(), config.buyOffsetPercent());
-		return roundUp(result, config.buyRoundInterval());
+		return applyRounding(result, config.buyRoundInterval(), config.buyRoundUp());
 	}
 
 	/**
@@ -244,7 +244,25 @@ public class WikiPriceManager
 			return -1;
 		}
 		int result = applyOffset(price, config.sellOffsetGp(), config.sellOffsetPercent());
-		return roundDown(result, config.sellRoundInterval());
+		return applyRounding(result, config.sellRoundInterval(), config.sellRoundUp());
+	}
+
+	/**
+	 * Gets the raw buy price without offsets or rounding. Used for recipes when offsets are disabled.
+	 */
+	public int getRawBuyPrice(int itemId, OsrsFlipConfig config)
+	{
+		Integer price = getRawPrice(itemId, true, config);
+		return price != null ? price : -1;
+	}
+
+	/**
+	 * Gets the raw sell price without offsets or rounding. Used for recipes when offsets are disabled.
+	 */
+	public int getRawSellPrice(int itemId, OsrsFlipConfig config)
+	{
+		Integer price = getRawPrice(itemId, false, config);
+		return price != null ? price : -1;
 	}
 
 	/**
@@ -335,28 +353,20 @@ public class WikiPriceManager
 		return Math.max(0, (int) Math.round(result));
 	}
 
-	/**
-	 * Rounds a price up to the nearest interval. Buy prices round up so you don't underbid.
-	 */
-	private int roundUp(int price, int interval)
+	private int applyRounding(int price, int interval, boolean roundUp)
 	{
 		if (interval <= 0 || price <= 0)
 		{
 			return price;
 		}
-		return ((price + interval - 1) / interval) * interval;
-	}
-
-	/**
-	 * Rounds a price down to the nearest interval. Sell prices round down so you don't overprice.
-	 */
-	private int roundDown(int price, int interval)
-	{
-		if (interval <= 0 || price <= 0)
+		if (roundUp)
 		{
-			return price;
+			return ((price + interval - 1) / interval) * interval;
 		}
-		return (price / interval) * interval;
+		else
+		{
+			return (price / interval) * interval;
+		}
 	}
 
 	public boolean hasPrice(int itemId)
