@@ -996,21 +996,19 @@ public class OsrsFlipPanel extends PluginPanel
 
 		JPanel resultRow = new JPanel(new BorderLayout(5, 0));
 		resultRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-		resultRow.add(new JLabel("Result Item:"), BorderLayout.WEST);
+		JPanel resultFields = new JPanel(new GridLayout(1, 4, 5, 0));
 		JTextField resultField = new JTextField();
-		resultRow.add(resultField, BorderLayout.CENTER);
+		JTextField resultQtyField = new JTextField("1");
+		resultFields.add(new JLabel("Result Item:"));
+		resultFields.add(resultField);
+		resultFields.add(new JLabel("  Qty:"));
+		resultFields.add(resultQtyField);
+		resultRow.add(resultFields, BorderLayout.CENTER);
 		topSection.add(resultRow);
 
 		JLabel resultPreview = attachNamePreview(resultField, panel);
 		resultPreview.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
 		topSection.add(resultPreview);
-
-		JPanel resultQtyRow = new JPanel(new BorderLayout(5, 0));
-		resultQtyRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-		resultQtyRow.add(new JLabel("Result Qty:"), BorderLayout.WEST);
-		JTextField resultQtyField = new JTextField("1");
-		resultQtyRow.add(resultQtyField, BorderLayout.CENTER);
-		topSection.add(resultQtyRow);
 
 		if (editingRecipe != null)
 		{
