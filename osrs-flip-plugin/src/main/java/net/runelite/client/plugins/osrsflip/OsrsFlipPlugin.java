@@ -46,7 +46,7 @@ import okhttp3.OkHttpClient;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Flip Tracker",
+	name = "Flip It",
 	description = "Monitor item prices and calculate profitable flips with combination item support",
 	tags = {"grand exchange", "flipping", "profit", "prices"}
 )
@@ -107,7 +107,7 @@ public class OsrsFlipPlugin extends Plugin
 		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/net/runelite/client/plugins/osrsflip/icon.png");
 
 		navButton = NavigationButton.builder()
-			.tooltip("Flip Tracker")
+			.tooltip("Flip It")
 			.icon(icon != null ? icon : new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB))
 			.priority(5)
 			.panel(panel)

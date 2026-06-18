@@ -183,7 +183,7 @@ public class OsrsFlipPanel extends PluginPanel
 		JPanel titleRow = new JPanel(new BorderLayout());
 		titleRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		JLabel title = new JLabel("Flip Tracker");
+		JLabel title = new JLabel("Flip It");
 		title.setForeground(Color.WHITE);
 		titleRow.add(title, BorderLayout.WEST);
 

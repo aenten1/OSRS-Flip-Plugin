@@ -27,7 +27,7 @@ requirements and the project's `AGENTS.md` rules. Check items off before opening
 
 ## 🟡 Polish — likely reviewer comments
 
-- [x] **Renamed to "Flip Tracker"** (matches the in-app panel title). Updated `@PluginDescriptor`
+- [x] **Renamed to "Flip It"** (matches the in-app panel title). Updated `@PluginDescriptor`
       `name`, `runelite-plugin.properties` `displayName`, and the docs. Package, directory,
       `@ConfigGroup("osrsflip")`, and all keyNames were left intact (renaming them would reset
       users' settings).

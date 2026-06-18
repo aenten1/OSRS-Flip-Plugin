@@ -1,6 +1,6 @@
-# Contributing to Flip Tracker
+# Contributing to Flip It
 
-Thank you for considering contributing to Flip Tracker! This document outlines the process for contributing code, documentation, and ideas.
+Thank you for considering contributing to Flip It! This document outlines the process for contributing code, documentation, and ideas.
 
 ## 🛡️ Jagex Compliance First
 
