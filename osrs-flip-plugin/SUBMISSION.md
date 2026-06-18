@@ -5,16 +5,18 @@ requirements and the project's `AGENTS.md` rules. Check items off before opening
 
 ## 🔴 Blockers — build / CI will fail
 
-- [~] **Plugin must be at the repository root.** Plugin Hub clones the repo at the manifest
-      `commit=` and runs `./gradlew` at the **root**. The plugin is self-contained in
-      `osrs-flip-plugin/` (no nested `.git`, no external deps). A standalone branch `plugin-only`
-      has been prepared via `git subtree split` (full history preserved, plugin at root).
-      **Remaining (yours):** create a public GitHub repo and push that branch as `main`:
-      ```
-      git push https://github.com/aenten1/<new-repo>.git plugin-only:main
-      ```
-      The unrelated root items (`07flip.tar.gz` 9-byte stub, empty `OpenSpec/` & `superpowers/`,
-      root `README.md`/`DEPLOYMENT_GUIDE.md`) are excluded automatically by the split.
+- [x] **Plugin is at the repository root.** Extracted via `git subtree split` (full history
+      preserved) and published as a standalone **public** repo:
+      **https://github.com/aenten1/flip-it** (default branch `main`). `./gradlew build` verified
+      green at the root, so the hub build will work. The unrelated monorepo root items
+      (`07flip.tar.gz`, empty `OpenSpec/` & `superpowers/`, root `README.md`/`DEPLOYMENT_GUIDE.md`,
+      and `.claude/settings.local.json`) were excluded.
+
+> **Development workflow note:** the plugin now lives in two places — the original monorepo
+> subdir (`OSRS-Flip-Plugin/osrs-flip-plugin/`) and the standalone `flip-it` repo. The **`flip-it`
+> repo is the one the Plugin Hub uses.** To avoid divergence, either develop directly in a fresh
+> clone of `flip-it`, or keep editing in the monorepo and re-sync with:
+> `git subtree split --prefix=osrs-flip-plugin -b plugin-only && git push https://github.com/aenten1/flip-it.git plugin-only:main`
 - [x] **`LICENSE` file (BSD 2-Clause)** added at the plugin root.
 - [x] **Full BSD-2 header on every source file** (was: 7 files + the test had an
       "All rights reserved" stub instead of the permissive header).
