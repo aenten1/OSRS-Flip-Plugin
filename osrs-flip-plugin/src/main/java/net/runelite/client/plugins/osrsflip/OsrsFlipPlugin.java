@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, OSRS Flip Plugin Developers
+ * Copyright (c) 2026, Aaron Enten (ace_554)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

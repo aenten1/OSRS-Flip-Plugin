@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, OSRS Flip Plugin Developers
+ * Copyright (c) 2026, Aaron Enten (ace_554)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -99,11 +99,12 @@ public interface OsrsFlipConfig extends Config
 		name = "Use Wiki Prices",
 		description = "Fetch real-time prices from the OSRS Wiki API instead of RuneLite's cache",
 		section = pricesSection,
-		position = 2
+		position = 2,
+		warning = "This feature submits your IP address to a 3rd-party server not controlled or verified by RuneLite developers"
 	)
 	default boolean useWikiPrices()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
