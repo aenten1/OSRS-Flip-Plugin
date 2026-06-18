@@ -46,7 +46,7 @@ import okhttp3.OkHttpClient;
 
 @Slf4j
 @PluginDescriptor(
-	name = "OSRS Flip Plugin",
+	name = "Flip Tracker",
 	description = "Monitor item prices and calculate profitable flips with combination item support",
 	tags = {"grand exchange", "flipping", "profit", "prices"}
 )

@@ -5,12 +5,16 @@ requirements and the project's `AGENTS.md` rules. Check items off before opening
 
 ## 🔴 Blockers — build / CI will fail
 
-- [ ] **Plugin must be at the repository root.** Plugin Hub clones the repo at the manifest
-      `commit=` and runs `./gradlew` at the **root**. Today the plugin lives in `osrs-flip-plugin/`
-      with unrelated files at the git root (`07flip.tar.gz`, `superpowers`, `OpenSpec`,
-      `DEPLOYMENT_GUIDE.md`). Publish a **dedicated public repo** whose root is this directory's
-      contents (`build.gradle`, `settings.gradle`, `runelite-plugin.properties`, `src/`, `LICENSE`,
-      `gradlew`, etc. at the top level).
+- [~] **Plugin must be at the repository root.** Plugin Hub clones the repo at the manifest
+      `commit=` and runs `./gradlew` at the **root**. The plugin is self-contained in
+      `osrs-flip-plugin/` (no nested `.git`, no external deps). A standalone branch `plugin-only`
+      has been prepared via `git subtree split` (full history preserved, plugin at root).
+      **Remaining (yours):** create a public GitHub repo and push that branch as `main`:
+      ```
+      git push https://github.com/aenten1/<new-repo>.git plugin-only:main
+      ```
+      The unrelated root items (`07flip.tar.gz` 9-byte stub, empty `OpenSpec/` & `superpowers/`,
+      root `README.md`/`DEPLOYMENT_GUIDE.md`) are excluded automatically by the split.
 - [x] **`LICENSE` file (BSD 2-Clause)** added at the plugin root.
 - [x] **Full BSD-2 header on every source file** (was: 7 files + the test had an
       "All rights reserved" stub instead of the permissive header).
@@ -23,13 +27,12 @@ requirements and the project's `AGENTS.md` rules. Check items off before opening
 
 ## 🟡 Polish — likely reviewer comments
 
-- [ ] **Rename the plugin.** Hub style discourages "OSRS"/"RuneScape"/"Plugin" in display names.
-      Pick a cleaner name (e.g. "Flip Tracker") and update **both** the `@PluginDescriptor` `name`
-      in `OsrsFlipPlugin.java` and `displayName` in `runelite-plugin.properties` so they match.
-- [ ] **Real identity.** Set `author=` in `runelite-plugin.properties` to your GitHub username
-      (currently `Flip Developer`). Must match the copyright holder in the headers/LICENSE.
-- [ ] **Higher-res icon.** `icon.png` is 16×16; the hub convention is **48×72**. Provide a crisper
-      icon for the plugin browser listing.
+- [x] **Renamed to "Flip Tracker"** (matches the in-app panel title). Updated `@PluginDescriptor`
+      `name`, `runelite-plugin.properties` `displayName`, and the docs. Package, directory,
+      `@ConfigGroup("osrsflip")`, and all keyNames were left intact (renaming them would reset
+      users' settings).
+- [x] **Author set** to `aenten1` in `runelite-plugin.properties` (was `Flip Developer`).
+- [x] **Icon upgraded to 48×72** (gold-coin stack, transparent background, ~2.8 KB PNG).
 - [ ] **(Optional) Disk I/O off the client thread.** `DataManager.save()` runs synchronously in
       `shutDown()` (client thread). It's a tiny JSON file and widely tolerated, but moving it off
       the client thread would fully satisfy the "no blocking disk I/O on the client thread" rule.

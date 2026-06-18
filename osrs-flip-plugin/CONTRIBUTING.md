@@ -1,6 +1,6 @@
-# Contributing to OSRS Flip Plugin
+# Contributing to Flip Tracker
 
-Thank you for considering contributing to OSRS Flip Plugin! This document outlines the process for contributing code, documentation, and ideas.
+Thank you for considering contributing to Flip Tracker! This document outlines the process for contributing code, documentation, and ideas.
 
 ## 🛡️ Jagex Compliance First
 

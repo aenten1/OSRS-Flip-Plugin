@@ -1,4 +1,4 @@
-# OSRS Flip Plugin
+# Flip Tracker
 
 A RuneLite plugin for monitoring item prices, calculating profitable flips, and managing combination item recipes.
 
@@ -31,7 +31,7 @@ Download the latest release from the [Releases](../../releases) page.
 ## Usage
 
 1. Launch RuneLite with the plugin enabled.
-2. Open the "OSRS Flip" panel from the side bar.
+2. Open the "Flip Tracker" panel from the side bar.
 3. Add items to your watchlist via the search bar.
 4. Define combination recipes in the "Combinations" tab.
 5. View calculated profits and adjust manual prices as needed.
