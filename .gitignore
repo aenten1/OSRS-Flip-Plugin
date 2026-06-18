@@ -65,3 +65,5 @@ htmlcov/
 *.swo
 *~
 ```
+# Plugin now lives in its own repo (github.com/aenten1/flip-it); embedded clone
+osrs-flip-plugin/
