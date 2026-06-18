@@ -7,3 +7,5 @@ build
 nbactions.xml
 nb-configuration.xml
 nbproject/
+# Claude Code local settings (per-user)
+.claude/settings.local.json
